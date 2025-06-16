@@ -34,18 +34,17 @@ echo "Gestor de paquetes: $PACKAGE_MANAGER"
 
 # --- 2. Instalar OpenSSH Server si no está presente ---
 echo "--- Verificando e instalando OpenSSH Server ---"
-if ! command -v sshd &> /dev/null; then
-    echo "OpenSSH Server ya instalado."
+if command -v sshd &> /dev/null; then
+    echo "OpenSSH Server ya está instalado."
 else
-    # instalar ssh
-    echo "OpenSSH Server no está activo o instalado. Procediendo con la instalación..."
+    echo "OpenSSH Server no está instalado. Procediendo con la instalación..."
     case "$PACKAGE_MANAGER" in
         "apt")
             apt update && apt install -y openssh-server
             ;;
         "dnf")
             dnf install -y openssh-server
-            systemctl enable sshd # En RHEL/Fedora, el servicio se llama sshd
+            systemctl enable sshd
             systemctl start sshd
             ;;
         "yum")
@@ -54,14 +53,13 @@ else
             systemctl start sshd
             ;;
     esac
+
     if [ $? -eq 0 ]; then
         echo "OpenSSH Server instalado y servicio iniciado."
     else
         echo "¡Error! No se pudo instalar OpenSSH Server. Abortando."
         exit 1
     fi
-else
-    echo "OpenSSH Server ya está instalado y activo."
 fi
 
 # --- 3. Asegurar que el servicio SSH inicie al arrancar ---
