@@ -9,8 +9,8 @@ function uso() {
 }
 
 # --- Validar cantidad de argumentos ---
-if [ $# -ne 1 ]; then
-    echo "Error: Debes proporcionar la IP a configurar y passoword del WIFI."
+if [ $# -ne 2 ]; then
+    echo "Error: Debes proporcionar la IP a configurar y password del WIFI."
     uso
 fi
 
@@ -25,40 +25,45 @@ fi
 SSID="lab_soc"
 IFACE="wlan0"          # Ajusta esto si tu interfaz es distinta
 WIFI_PASSWORD="$2"
-IPV4_ADDR="${IPV4_ADDR}/24"  # Agregamos la máscara automáticamente
+IPV4_ADDR_WITH_MASK="${IPV4_ADDR}/24"
 GATEWAY="192.168.0.1"
 DNS="8.8.8.8 1.1.1.1"
 
 # --- Detectar si ya existe la conexión ---
-CON_NAME=$(nmcli -t -f NAME connection show | grep "^${SSID}$")
+CON_NAME=$(nmcli -t -f NAME connection show | grep "^${SSID}$" || true)
 
 if [ -z "$CON_NAME" ]; then
   echo "La conexión para SSID '$SSID' no existe. Creando nueva conexión WiFi..."
   nmcli connection add type wifi ifname "$IFACE" con-name "$SSID" ssid "$SSID" connection.permissions ""
-
+  
   nmcli connection modify "$SSID" wifi-sec.key-mgmt wpa-psk
   nmcli connection modify "$SSID" wifi-sec.psk "$WIFI_PASSWORD"
 else
   echo "La conexión '$SSID' ya existe. Modificando parámetros..."
 fi
 
-# --- Aplicar configuración estática ---
-nmcli connection modify "$SSID" ipv4.addresses "$IPV4_ADDR"
+# --- Aplicar configuración IP estática SOLO a lab_soc ---
+nmcli connection modify "$SSID" ipv4.addresses "$IPV4_ADDR_WITH_MASK"
 nmcli connection modify "$SSID" ipv4.gateway "$GATEWAY"
 nmcli connection modify "$SSID" ipv4.dns "$DNS"
 nmcli connection modify "$SSID" ipv4.method manual
 
-# (Opcional) Desactivar IPv6 si quieres:
-# nmcli connection modify "$SSID" ipv6.method ignore
+# --- Confirmación de configuración ---
+echo "--- Configuración aplicada correctamente al perfil '$SSID' ---"
+nmcli connection show "$SSID" | grep ipv4
 
-echo "Configuración aplicada correctamente a la red '$SSID'."
+# --- Reconectar ---
+nmcli connection reload
 
-# Verificar que el SSID está visible antes de intentar conectar
+# Si el SSID está visible, conectamos
 if nmcli device wifi list ifname "$IFACE" | grep -q "$SSID"; then
   echo "SSID '$SSID' detectado. Intentando conectar..."
-  nmcli connection down "$SSID" 2>/dev/null
-  nmcli connection up "$SSID"
+  nmcli device disconnect "$IFACE" || true
+  nmcli device wifi connect "$SSID" password "$WIFI_PASSWORD" ifname "$IFACE"
 else
-  echo "Error: SSID '$SSID' no encontrado en el aire. No se puede levantar la conexión."
-  exit 1
+  echo "Nota: SSID '$SSID' no visible. La configuración queda almacenada para cuando esté disponible."
 fi
+
+# Mostrar la IP final de la interfaz
+echo "--- IP actual en $IFACE ---"
+ip -4 addr show "$IFACE" | grep inet || echo "No hay IP asignada aún."
