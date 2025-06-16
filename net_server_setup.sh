@@ -21,9 +21,18 @@ if [[ ! $IPV4_ADDR =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
     uso
 fi
 
+# Configuración de WiFi
+IFACE=$(nmcli -t -f DEVICE,TYPE device | grep ':wifi' | grep -v 'p2p' | head -n1 | cut -d: -f1 | tr -d '\n')
+
+if [ -z "$IFACE" ]; then
+  echo "No se encontró interfaz Wi-Fi."
+  exit 1
+fi
+
+echo "Usando interfaz Wi-Fi: $IFACE"
+
 # --- Configuración fija ---
 SSID="lab_soc"
-IFACE="wlan0"          # Ajusta esto si tu interfaz es distinta
 WIFI_PASSWORD="$2"
 IPV4_ADDR_WITH_MASK="${IPV4_ADDR}/24"
 GATEWAY="192.168.0.1"
