@@ -35,7 +35,7 @@ CON_NAME=$(nmcli -t -f NAME connection show | grep "^${SSID}$")
 if [ -z "$CON_NAME" ]; then
   echo "La conexión para SSID '$SSID' no existe. Creando nueva conexión WiFi..."
   nmcli connection add type wifi ifname "$IFACE" con-name "$SSID" ssid "$SSID" connection.permissions ""
-  
+
   nmcli connection modify "$SSID" wifi-sec.key-mgmt wpa-psk
   nmcli connection modify "$SSID" wifi-sec.psk "$WIFI_PASSWORD"
 else
@@ -53,6 +53,12 @@ nmcli connection modify "$SSID" ipv4.method manual
 
 echo "Configuración aplicada correctamente a la red '$SSID'."
 
-# --- Reiniciar la conexión para aplicar cambios ---
-nmcli connection down "$SSID"
-nmcli connection up "$SSID"
+# Verificar que el SSID está visible antes de intentar conectar
+if nmcli device wifi list ifname "$IFACE" | grep -q "$SSID"; then
+  echo "SSID '$SSID' detectado. Intentando conectar..."
+  nmcli connection down "$SSID" 2>/dev/null
+  nmcli connection up "$SSID"
+else
+  echo "Error: SSID '$SSID' no encontrado en el aire. No se puede levantar la conexión."
+  exit 1
+fi
