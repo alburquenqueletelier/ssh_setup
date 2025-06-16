@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # --- Comprobación de permisos ---
 if [[ $EUID -ne 0 ]]; then
@@ -33,7 +34,10 @@ echo "Gestor de paquetes: $PACKAGE_MANAGER"
 
 # --- 2. Instalar OpenSSH Server si no está presente ---
 echo "--- Verificando e instalando OpenSSH Server ---"
-if ! systemctl is-active --quiet ssh; then
+if ! command -v sshd &> /dev/null; then
+    echo "OpenSSH Server ya instalado."
+else
+    # instalar ssh
     echo "OpenSSH Server no está activo o instalado. Procediendo con la instalación..."
     case "$PACKAGE_MANAGER" in
         "apt")
