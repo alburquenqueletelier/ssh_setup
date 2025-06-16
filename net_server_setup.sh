@@ -29,24 +29,18 @@ IPV4_ADDR_WITH_MASK="${IPV4_ADDR}/24"
 GATEWAY="192.168.0.1"
 DNS="8.8.8.8 1.1.1.1"
 
-# --- Detectar si ya existe la conexión ---
-CON_NAME=$(nmcli -t -f NAME connection show | grep "^${SSID}$" || true)
-
-if [ -z "$CON_NAME" ]; then
-  echo "La conexión para SSID '$SSID' no existe. Creando nueva conexión WiFi..."
-  nmcli connection add type wifi ifname "$IFACE" con-name "$SSID" ssid "$SSID" connection.permissions ""
-  
-  nmcli connection modify "$SSID" wifi-sec.key-mgmt wpa-psk
-  nmcli connection modify "$SSID" wifi-sec.psk "$WIFI_PASSWORD"
-else
-  echo "La conexión '$SSID' ya existe. Modificando parámetros..."
+# --- Eliminar conexión anterior si existe ---
+if nmcli -t -f NAME connection show | grep -q "^${SSID}$"; then
+  echo "Eliminando perfil anterior '$SSID' para evitar conflictos..."
+  nmcli connection delete "$SSID"
 fi
 
-# --- Aplicar configuración IP estática SOLO a lab_soc ---
-nmcli connection modify "$SSID" ipv4.addresses "$IPV4_ADDR_WITH_MASK"
-nmcli connection modify "$SSID" ipv4.gateway "$GATEWAY"
-nmcli connection modify "$SSID" ipv4.dns "$DNS"
-nmcli connection modify "$SSID" ipv4.method manual
+# --- Crear conexión con configuración completa, incluyendo seguridad WPA2 ---
+echo "Creando nueva conexión WiFi '$SSID' con IP estática y WPA2..."
+nmcli connection add type wifi ifname "$IFACE" con-name "$SSID" ssid "$SSID" \
+  wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$WIFI_PASSWORD" \
+  ipv4.addresses "$IPV4_ADDR_WITH_MASK" ipv4.gateway "$GATEWAY" \
+  ipv4.dns "$DNS" ipv4.method manual connection.permissions ""
 
 # --- Confirmación de configuración ---
 echo "--- Configuración aplicada correctamente al perfil '$SSID' ---"
@@ -59,7 +53,8 @@ nmcli connection reload
 if nmcli device wifi list ifname "$IFACE" | grep -q "$SSID"; then
   echo "SSID '$SSID' detectado. Intentando conectar..."
   nmcli device disconnect "$IFACE" || true
-  nmcli device wifi connect "$SSID" password "$WIFI_PASSWORD" ifname "$IFACE"
+  sleep 1  # Delay corto para evitar conflictos de reconexión
+  nmcli connection up "$SSID"
 else
   echo "Nota: SSID '$SSID' no visible. La configuración queda almacenada para cuando esté disponible."
 fi
