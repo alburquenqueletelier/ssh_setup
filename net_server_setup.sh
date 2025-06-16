@@ -1,15 +1,16 @@
 #!/bin/bash
+set -e
 
 # --- Función para mostrar el uso correcto ---
 function uso() {
-    echo "Uso: sudo $0 <IP>"
-    echo "Ejemplo: sudo $0 192.168.0.10"
+    echo "Uso: sudo $0 <IP> <WIFI_PASSWORD>"
+    echo "Ejemplo: sudo $0 192.168.0.10 miclave123"
     exit 1
 }
 
 # --- Validar cantidad de argumentos ---
 if [ $# -ne 1 ]; then
-    echo "Error: Debes proporcionar la IP a configurar."
+    echo "Error: Debes proporcionar la IP a configurar y passoword del WIFI."
     uso
 fi
 
@@ -23,6 +24,7 @@ fi
 # --- Configuración fija ---
 SSID="lab_soc"
 IFACE="wlan0"          # Ajusta esto si tu interfaz es distinta
+WIFI_PASSWORD="$2"
 IPV4_ADDR="${IPV4_ADDR}/24"  # Agregamos la máscara automáticamente
 GATEWAY="192.168.0.1"
 DNS="8.8.8.8 1.1.1.1"
@@ -33,6 +35,9 @@ CON_NAME=$(nmcli -t -f NAME connection show | grep "^${SSID}$")
 if [ -z "$CON_NAME" ]; then
   echo "La conexión para SSID '$SSID' no existe. Creando nueva conexión WiFi..."
   nmcli connection add type wifi ifname "$IFACE" con-name "$SSID" ssid "$SSID" connection.permissions ""
+  
+  nmcli connection modify "$SSID" wifi-sec.key-mgmt wpa-psk
+  nmcli connection modify "$SSID" wifi-sec.psk "$WIFI_PASSWORD"
 else
   echo "La conexión '$SSID' ya existe. Modificando parámetros..."
 fi
