@@ -32,7 +32,7 @@ CON_NAME=$(nmcli -t -f NAME connection show | grep "^${SSID}$")
 
 if [ -z "$CON_NAME" ]; then
   echo "La conexión para SSID '$SSID' no existe. Creando nueva conexión WiFi..."
-  nmcli connection add type wifi ifname "$IFACE" con-name "$SSID" ssid "$SSID"
+  nmcli connection add type wifi ifname "$IFACE" con-name "$SSID" ssid "$SSID" connection.permissions ""
 else
   echo "La conexión '$SSID' ya existe. Modificando parámetros..."
 fi
