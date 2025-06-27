@@ -1,44 +1,64 @@
-# Setup para configurar SSH en entornos linux
+# Setup to Configure SSH in Linux Environments
+#==============================================
+This project aims to provide a simple and easy-to-use setup for configuring SSH in Linux environments. Its primary goal is to enable remote and large-scale management of student PCs in the lab. This setup has some hardcode values for the lab's specific needs, but it can be easily adapted to other environments. Feel free to modify the code to suit your needs.
 
-## Requerimientos
+## Requirements
 
 - Ubuntu 24.04
-- Kali Linux 2025.1
+- Kali Linux 2025.1  
+**Note:** Any machine with an OS capable of running SSH
 
-## Ejecución
+## Execution
 
-### Paso 1
-Clonar el repositorio en el pc servidor `git clone https://github.com/alburquenqueletelier/ssh_setup.git`
+### Step 1
+Clone the repository on the server PC  
+`git clone https://github.com/SoC-UAI/ssh_setup.git`
 
-### Paso 2
-Entrar a setup `cd SSH_SETUP/setup`
-Levanta el servidor ssh `sudo ./ssh_server_setup.sh`
+### Step 2
+Enter the setup directory  
+`cd SSH_SETUP/setup`  
+Start the SSH server  
+`sudo ./ssh_server_setup.sh`
 
-### Paso 3
-Configura la ip fija para la red lab_soc `sudo ./net_server_setup.sh <ip> <wifi_pass> # sudo ./net_server_setup.sh 192.168.0.1 '#TuClaveWiFI'` 
-Para el lab de VIÑA se está usando el n° de host en la ip el n° que tiene el pc asignado + 10, ej:
+### Step 3
+Set a static IP for the `lab_soc` network  
+`sudo ./net_server_setup.sh <ip> <wifi_pass> # sudo ./net_server_setup.sh 192.168.0.1 '#YourWiFiPassword'`  
 
-```
+For the VIÑA lab, the host number is used in the IP by adding 10 to the assigned PC number, e.g.:
+
 PC1 => 192.168.0.11
-```
 
-En caso de agregar más pc se pueden adicionar 10 más o conversar con Lab Manager para solución.
 
-**Nota:** si la contraseña tiene un *"#"* debes colocar la contraseña dentro de comillas simples 'ejemploPass'
+If more PCs are added, you can add 10 more or consult with the Lab Manager for a solution.
 
-### Paso 4
-Copiar la llave pública al servidor ssh `ssh-copy-id -i archivo.pub usuario@ip`
-**Importante:** 
-- Si vas a copiar la clave por segunda vez al OS que falta, primero debes ejecutar en el computador administrador (cliente): `ssh-keygen -R <ip>` (esto elimina la entrada antigua de known_hosts para evitar que al copiar la llave la máquina detecte un ataque man-in-the-middle al estar usando la misma ip)
-- Tanto el pc cliente como el servidor (donde se copiara la llave pública) deben estar en la misma red *(lab_soc)*
-- Reemplazar el nombre del archivo.pub por la llave correspondiente. Lo mismo el usuario y la ip. El usuario varíaa según la distribución de linux que se esté utilizando, pero siempre con la cuenta con permisos root.
+**Note:** If the password contains a *"#"*, you must enclose it in single quotes `'examplePass'`
 
-### Paso 4.1
-Validar la conexión remota: `ssh <usuario>@<ip>` esto no debería requerir contraseña si quedo bien configurado.
+### Step 4
+Copy the public key to the SSH server  
+`ssh-copy-id -i file.pub user@ip`  
 
-### Paso 5
-Repetir el proceso con la distribución de linux faltante.
-**Nota:** al probar la conexión ssh solo funcionara con la distribución de OS que está en ejecución. Por ende, si está en Kali y quiere probar con Ubuntu, primero debe cambiar a Ubuntu, de lo contrario fallará.
+**Important:**
+- If you're copying the key again to a different OS, you must first run on the administrator (client) computer:  
+  `ssh-keygen -R <ip>`  
+  (This removes the previous `known_hosts` entry to avoid the system detecting a man-in-the-middle attack due to IP reuse.)
+- Both the client and server PC (where the public key will be copied) must be on the same network *(lab_soc)*
+- Replace `file.pub` with the corresponding key. Do the same for `user` and `ip`. The user may vary depending on the Linux distribution being used but must always have root permissions.
 
-## Conexión remota
-Cada vez que con el cliente te quieras conectar de forma remota y ya lo hayas hecho a una distro tienes que borrar esa maquina de los pcs conocidos por ssh: `ssh-keygen -R <ip>`
+### Step 4.1
+Validate the remote connection:  
+`ssh <user>@<ip>`  
+This should not require a password if everything was set up correctly.
+
+### Step 5
+Repeat the process with the remaining Linux distribution.  
+**Note:** When testing the SSH connection, it will only work with the OS that is currently running. Therefore, if you are on Kali and want to test Ubuntu, you must first switch to Ubuntu, otherwise it will fail.
+
+## Remote Connection
+Each time you want to connect remotely from the client and you have already done so with a different distro, you must remove that machine from the known hosts:  
+`ssh-keygen -R <ip>`
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for more details.
+
+> This project is developed for educational purposes and is intended for non-commercial use only. It is provided as-is, without warranty of any kind.
